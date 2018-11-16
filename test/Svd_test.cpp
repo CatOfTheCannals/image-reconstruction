@@ -4,7 +4,7 @@
 #include "gtest/gtest.h"
 
 #include "../src/Matrix.h"
-#include "../src/Pca.h"
+#include "../src/Svd.h"
 
 // --------- SET UP --------------
 class runTest : public ::testing::Test {

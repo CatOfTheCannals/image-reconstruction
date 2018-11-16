@@ -2,6 +2,9 @@
 cmake-build-debug
 build
 
+# clion files
+.xml
+
 # Prerequisites
 *.d
 

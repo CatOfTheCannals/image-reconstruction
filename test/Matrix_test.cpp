@@ -192,7 +192,7 @@ TEST_F (mockMatrices, hstack){
 }
 
 TEST_F (mockMatrices, saveMatrixToCsv){
-    string filename("../../test/debugging_matrices/erase_me.csv");
+    string filename("../../test/debugging_matrices/matrix");
     Matrix::saveMatrixToCsv(e, filename);
     ASSERT_EQ(Matrix::loadMatrixFromFile(filename), e);
 
