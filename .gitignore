@@ -1,3 +1,6 @@
+# jupyter checkpoints
+.ipynb_checkpoints
+
 # Build dirs
 cmake-build-debug
 build
