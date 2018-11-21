@@ -280,8 +280,6 @@ Matrix subMatrix(const Matrix& A, int i1, int i2, int j1, int j2){
     int res_rows = i2 - i1 + 1;
     int res_cols = j2 - j1 + 1;
 
-    int src_index;
-    int dst_index = 0;
     Matrix res(res_rows, res_cols);
     for(int i = BASE_INDEX; i < res.rows() + BASE_INDEX; i++){
         for(int j = BASE_INDEX; j < res.cols() + BASE_INDEX; j++){
