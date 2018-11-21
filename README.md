@@ -11,10 +11,4 @@ Will create a `build`directory with executable in it.
 
 `./tp3 -params`
 
-### running google-tests from build dir:
-
-`cd test/`
-
-`./correrTests`
-
 
