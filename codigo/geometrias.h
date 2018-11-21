@@ -19,7 +19,7 @@ void static aux_geometria_circular(std::pair <int,int> center, int base_index_x,
 	for (int i = 0; i < 2*r; ++i) { // ciclo x
 		discretizacion.trazar_rayo(make_pair(x, y), center);//dispara el rayo
 		x++;//se mueve en el eje x
-		y = round(sqrt(squared_r - x^2));//se mueve en el eje y)
+		y = round(sqrt(squared_r - x*x));//se mueve en el eje y)
 	}
 
 	y = -1 * r + base_index_x; // (y = sqrt(r^2 - x^2)) //
@@ -28,7 +28,7 @@ void static aux_geometria_circular(std::pair <int,int> center, int base_index_x,
 	for (int i = 0; i < 2*r; ++i) { // ciclo y
 		discretizacion.trazar_rayo(make_pair(x, y), center);//dispara el rayo
 		y++;//se mueve en el eje y
-		x = round(sqrt(squared_r - y^2));//se mueve en el eje x)
+		x = round(sqrt(squared_r - y*y));//se mueve en el eje x)
 	}
 }
 
