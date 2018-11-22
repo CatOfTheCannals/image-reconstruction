@@ -71,7 +71,11 @@ Matrix backward_substitution(const Matrix& A);
 //Resuelve el sistema Ax = b y devuelve x. Se asume que el sistema es compatible determinado y que EG puede ejecutarse sobre el.
 Matrix resolver_sistema(const Matrix& A, const Matrix& b);
 
-Matrix resolver_sistema_con_svd(const Matrix& A, const Matrix& b);
+Matrix resolver_sistema_con_svd(const Matrix& v, const Matrix& sInv_ut, const Matrix& b);
+
+std::tuple<Matrix, Matrix> generar_svd(const Matrix& A);
+
+Matrix sqrt_to_all_elems(const Matrix& A);
 
 Matrix apply_inverse_sigma(const Matrix& s, const Matrix& A, int rows);
 

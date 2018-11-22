@@ -117,12 +117,15 @@ Matrix partial_matrix_mult(const Matrix& A, const Matrix& B, size_t l, size_t m,
 Matrix operator*(const Matrix& A, const Matrix& B){
 	
 	assert(A.cols() == B.rows());
-	Matrix C = get_zero_initialized(A.rows(), B.cols());
+	Matrix C(A.rows(), B.cols());
 
 	for(size_t i = BASE_INDEX; i < A.rows() + BASE_INDEX; i++){
 		for(size_t j = BASE_INDEX; j < A.cols() + BASE_INDEX; j++){
+
+			double aij = A(i, j);
+
 			for(size_t k = BASE_INDEX; k < B.cols() + BASE_INDEX; k++){
-				C.insert(i, k, C(i,k) + A(i, j)*B(j,k));
+				C.insert(i, k, C(i,k) + aij*B(j,k));
 			}
 
 		}
@@ -236,23 +239,39 @@ Matrix resolver_sistema(const Matrix& A, const Matrix& b){
 	return backward_substitution(tmp);
 }
 
-Matrix resolver_sistema_con_svd(const Matrix& A, const Matrix& b){
+Matrix resolver_sistema_con_svd(const Matrix& v, const Matrix& sInv_ut, const Matrix& b){
+	return v * (sInv_ut * b);
+}
+
+std::tuple<Matrix, Matrix> generar_svd(const Matrix& A){
     assert(A.cols() == b.rows() && b.cols() == 1);
 
-    Matrix AtA = trasponer(A) * A;
+    Matrix AtA = A.mt_times_m();
     auto u_s = calcular_autovectores(AtA, AtA.rows());
-    Matrix u = std::get<0>(u_s);
-    Matrix s = std::get<1>(u_s);
+	Matrix u = std::get<0>(u_s);
+	Matrix s = std::get<1>(u_s);
+
+	Matrix sq = sqrt_to_all_elems(s);
+	double numero_de_condicion = sq(BASE_INDEX, BASE_INDEX) / sq(sq.rows(), BASE_INDEX);
+	std::cout << "numero_de_condicion: " << numero_de_condicion << std::endl;
 
     Matrix ut = trasponer(u);
 
-    Matrix vt = apply_inverse_sigma(s, ut*A, A.cols());
+    Matrix vt = apply_inverse_sigma(sq, ut*A, A.cols());
 
-    Matrix sInv_ut = apply_inverse_sigma(s, ut, A.cols());
+    Matrix sInv_ut = apply_inverse_sigma(sq, ut, A.cols());
 
-    Matrix x = trasponer(vt) * (sInv_ut * b);
-    return x;
+    return std::make_tuple(trasponer(vt), sInv_ut);
+}
 
+Matrix sqrt_to_all_elems(const Matrix& A) {
+	Matrix res(A);
+	for (int  i = 0;  i < res.rows(); ++ i) {
+		for (int j = 0; j < res.cols(); ++j) {
+			res.insert(i,j, sqrt(res(i,j)) );
+		}
+	}
+	return res;
 }
 
 Matrix apply_inverse_sigma(const Matrix& s, const Matrix& A, int rows) {
@@ -280,8 +299,6 @@ Matrix subMatrix(const Matrix& A, int i1, int i2, int j1, int j2){
     int res_rows = i2 - i1 + 1;
     int res_cols = j2 - j1 + 1;
 
-    int src_index;
-    int dst_index = 0;
     Matrix res(res_rows, res_cols);
     for(int i = BASE_INDEX; i < res.rows() + BASE_INDEX; i++){
         for(int j = BASE_INDEX; j < res.cols() + BASE_INDEX; j++){
@@ -305,27 +322,26 @@ std::tuple<Matrix, Matrix> calcular_autovectores(Matrix B, size_t k){
 	Matrix autovalores(n, 1);
 	Matrix v_anterior(n, 1);
 	Matrix C(n, k);
-	int iteraciones = 100;
+	int iteraciones = 15;
 
 	//calcular n autovectores
 	for(size_t autovector_actual = BASE_INDEX; autovector_actual < k + BASE_INDEX; autovector_actual++){
 
-		std::cout << "Calculando autovector nº " << (1 + autovector_actual) << std::endl;
-		bool primera_iteracion = true;
+		std::cout << "debug: Calculando autovector nº " << (1 + autovector_actual) << " / " << k << std::endl;
 
 		//Inicializa un vector random. No importa cual sea
-		for(size_t i = BASE_INDEX; i < n + BASE_INDEX; i++)
+		for(size_t i = BASE_INDEX; i < n + BASE_INDEX; i++){
 			v.insert(i, BASE_INDEX, rand() % 16);
+		}
 
-		for(int i = 0; i < iteraciones && (primera_iteracion || norma_inf(v - v_anterior) > 0.000001); i++){
+		for(int i = 0; i < iteraciones ; i++){
 			
-			if(!primera_iteracion) v_anterior = v;
+			v_anterior = v;
 			//Itera sobre el producto de B*v. Cuantas mas iteraciones se hagan. Mas cerca va a estar v
-			//De el subespacio generado por alguno de los autovectores de B.
+			//Del subespacio generado por alguno de los autovectores de B.
 			v = B*v;
-			//Para evitar que crescan demaciado los valores de v
+			//Para evitar que crezcan demasiado los valores de v
 			v = scalar_mult((1/norma_2(v)), v);
-			primera_iteracion = false;
 		}
 
 		Matrix v_t = trasponer(v); 
@@ -335,20 +351,21 @@ std::tuple<Matrix, Matrix> calcular_autovectores(Matrix B, size_t k){
 			C.insert(i, autovector_actual, v(i, BASE_INDEX));
 		}
 
-
-		//Calculo chamuyo del autovalor asociado a B
-		//num = v_t*B*v						v_t*B*v
-		//		-------*v   =?  B*v ===> 	------- = landa
-		//den = v_t * v						v_t * v
-		Matrix numerador = ((v_t*B)*v);
-		Matrix denominador = (v_t*v);
-		Matrix::value_type autovalor_asociado = numerador(BASE_INDEX, BASE_INDEX) / denominador(BASE_INDEX, BASE_INDEX);
-
+		Matrix numer = B*v;
+		bool escape = false;
+		double autovalor_asociado;
+		for(int val = 0; val < v.rows() && escape==false; val++){
+			double denom = v(val,0);
+			if(denom!=0){
+				autovalor_asociado = numer(val,0)/denom;
+			    escape = true;
+			}
+		}
 		autovalores.insert(autovector_actual, BASE_INDEX, autovalor_asociado);
 
 		if(autovector_actual != n + BASE_INDEX - 1){
 			// Elimina el autoespacio asociado al autovector calculado de la base de autovectores de B (vìa deflacion)
-			B = (B - scalar_mult(autovalor_asociado, v*v_t));
+			B = (B - numer*v_t);
 		}
 
 	}
@@ -369,22 +386,16 @@ Matrix trasponer(const Matrix& A){
 
 inline
 Matrix::value_type norma_2(const Matrix& v){
-	
 	assert(v.cols() == 1);
-	typedef Matrix::value_type decimal;
 
 	size_t n = v.rows();	
-	decimal norma_2(0);
-	decimal c(0);
-	for(size_t i = BASE_INDEX; i < n + BASE_INDEX; i++){
-		decimal y = std::pow(v(i, BASE_INDEX), 2) - c;
-		decimal t = norma_2 + y;
-		c = (t - norma_2) - y;
-		norma_2 = t;
-	}
+	double res = 0;
 
-	norma_2 = sqrt(norma_2);
-	return norma_2;
+	for(size_t i = BASE_INDEX; i < n + BASE_INDEX; i++){
+		double y = v(i, BASE_INDEX);
+		res += y*y;
+	}
+	return sqrt(res);
 }
 
 inline

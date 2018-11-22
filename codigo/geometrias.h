@@ -550,7 +550,7 @@ struct geo_circular {
 
 		unsigned img_size = discretizacion.img_size();
 		std::pair <int,int> center;
-		int base_index;
+		int base_index = 0;
 
 		definir_variables_centro(base_index, center, img_size);
 		aux_geometria_circular(center, base_index, base_index, discretizacion, _k);

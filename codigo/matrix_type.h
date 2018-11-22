@@ -141,6 +141,34 @@ public:
 		return true;
 	}
 
+	matrix_type<T> mt_times_m() const{
+		//X.transpose()*X
+		matrix_type result = matrix_type(this->cols(), this->cols());
+
+		int index = 0;
+		for (int i = 0; i < this->cols(); i++) {
+			double* i_column = new double[this->rows()];
+			for (int k = 0; k < this->rows(); k++) {
+				i_column[k] = (*this)(k, i);
+			}
+
+			for (int j = 0; j < this->cols(); j++) {
+
+				double temp = 0;
+				//actual multiplication
+				for (int k = 0; k < this->rows(); k++) {
+					temp += i_column[k] * (*this)(k, j);
+				}
+
+				result._data[index] = temp;
+				index++;
+			}
+			delete[] i_column;
+
+		}
+		return result;
+	}
+
 	friend
 	void swap(matrix_type& first, matrix_type& second){
 		using std::swap;
@@ -166,6 +194,7 @@ public:
 			}
 		}
 	}
+
 
 
 };

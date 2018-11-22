@@ -15,11 +15,18 @@ class Discretizador{
 private:
 
 	Matrix _img;
+	Matrix D;
+	Matrix t;
+
+	Matrix v;
+	Matrix sInv_ut;
+
 	std::vector< std::pair< std::pair<int, int>, std::pair<int, int> > > _rayos;
 	size_t _n;
-	double _ruido;
 	double _tiempo_matrices;
 	double _tiempo_cml;
+	double _tiempo_autovectores;
+
 
 public:
 
@@ -30,7 +37,6 @@ public:
 
 		_n = n;
 		_img = load_matrix(filename);
-		_ruido = r;
 
 		if(_img.rows() != _img.cols()){
 			_img = get_zero_initialized(n);
@@ -62,26 +68,42 @@ public:
 		return _img.rows();
 	}
 
-	Matrix ejecutar_analisis_tomografico(){
-
-		std::chrono::system_clock::time_point begin = std::chrono::system_clock::now();
+	void setup_matrices(){
+		auto begin = std::chrono::system_clock::now();
 		auto matrices = matrices_del_sistema(); //CALCULAR D y t
-	  	std::chrono::system_clock::time_point end = std::chrono::system_clock::now();
-	  	_tiempo_matrices = std::chrono::duration_cast<std::chrono::microseconds>(end - begin).count();
+		auto end = std::chrono::system_clock::now();
+		_tiempo_matrices = std::chrono::duration_cast<std::chrono::microseconds>(end - begin).count();
+		std::cout << "matrices creadas" << std::endl;
 
-		Matrix& D = matrices.first;
-		Matrix& t = matrices.second;
+		this->D = matrices.first;
+		this->t = matrices.second;
+
+		 begin = std::chrono::system_clock::now();
+		auto v_and_sInv_ut = generar_svd(D);
+		 end = std::chrono::system_clock::now();
+		_tiempo_autovectores = std::chrono::duration_cast<std::chrono::microseconds>(end - begin).count();
+		std::cout << "autovectores calculados" << std::endl;
+
+		this->v = std::get<0>(v_and_sInv_ut);
+		this->sInv_ut = std::get<1>(v_and_sInv_ut);
+
+	}
 
 
+	Matrix ejecutar_analisis_tomografico(const double r){
+		agregar_ruido(t, r);
+		std::cout << "ruido y transposicion exitoses" << std::endl;
 
-		agregar_ruido(t);
-		Matrix Dt = trasponer(D);
+		auto begin = std::chrono::system_clock::now();
+		Matrix x = resolver_sistema_con_svd(this->v, this->sInv_ut, t);
 
-		begin = std::chrono::system_clock::now();
-		Matrix x = resolver_sistema_con_svd(D, t);
-		// Matrix x = resolver_sistema(Dt*D, Dt*t); //EJECUTAR CML
-	  	end = std::chrono::system_clock::now();
+		// Matrix Dt = trasponer(D);
+		// Matrix x = resolver_sistema(Dt*D, Dt*t); //EJECUTAR CML A LA ANTIWA
+
+		auto end = std::chrono::system_clock::now();
 		_tiempo_cml = std::chrono::duration_cast<std::chrono::microseconds>(end - begin).count();
+
+		std::cout << "sistema resuelto" << std::endl;
 	  	
 	  	return x;
 
@@ -95,15 +117,20 @@ public:
 		return _tiempo_cml;
 	}
 
+	double tiempo_autovectores(){
+		return _tiempo_autovectores;
+	}
+
+
 private:
 
 	//Agrega ruido a t. 
 	//requiere: t es un vector columna
-	void agregar_ruido(Matrix& t){
+	void agregar_ruido(Matrix& t, double ruido){
 
-		srand(0); //resultados reproducibles;
+		// srand(0); //resultados reproducibles;
 
-		double fMax = _ruido;
+		double fMax = ruido;
 		double fMin = 0.0; 
 
 		for(size_t i = 0; i < t.rows(); i++){

@@ -242,29 +242,34 @@ int main(int argc, char** argv){
 
 	  	std::chrono::system_clock::time_point end = std::chrono::system_clock::now();
 	  	double tiempo_rayos = std::chrono::duration_cast<std::chrono::microseconds>(end - begin).count();
+		std::cout << "ejecutar_analisis_tomografico" << std::endl;
+		discretizacion.setup_matrices();
+		vector<double> ruidos = {0,10,20,30,40,50};
+		std::cout << "csv: ruido,tiempo_geometria_microseconds,tiempo_matrices_microseconds,tiempo_cml_microseconds,tiempo_autovectores_microseconds" << std::endl;
+		for (double r : ruidos) {
+			Matrix x = discretizacion.ejecutar_analisis_tomografico(r);
+			std::cout << "debug: analisis executed" << std::endl;
+			//reconstruir imagen
 
-		Matrix x = discretizacion.ejecutar_analisis_tomografico();
-        std::cout << "debug: analisis executed" << std::endl;
-		//reconstruir imagen
+			unsigned short* data = new unsigned short[x.rows()];
+			for(unsigned i = 0; i < x.rows(); i++){
+				if( x(i,0) < 0)
+					x(i,0) = 0;
+				else if(x(i,0) > 255)
+					x(i,0) = 255;
 
-		unsigned short* data = new unsigned short[x.rows()];
-		for(unsigned i = 0; i < x.rows(); i++){
-			if( x(i,0) < 0)
-				x(i,0) = 0;
-			else if(x(i,0) > 255)
-				x(i,0) = 255;
+				data[i] = (unsigned short)x(i,0);
+			}
 
-			data[i] = (unsigned short)x(i,0);
+			if(!SavePPMFile(output_img.c_str(), data, n, n, PPM_LOADER_PIXEL_TYPE_GRAY_16B, NULL)){
+				throw std::runtime_error("Error guardando imagen");
+			}
+			delete[] data;
+			std::cout << "csv: " << r <<","<< tiempo_rayos<<","<<  discretizacion.tiempo_armado_matrices()<<","<< discretizacion.tiempo_cml()
+					  << "," << discretizacion.tiempo_autovectores() << std::endl;
+
 		}
 
-		if(!SavePPMFile(output_img.c_str(), data, n, n, PPM_LOADER_PIXEL_TYPE_GRAY_16B, NULL)){
-			throw std::runtime_error("Error guardando imagen");	
-		} 
-		delete[] data;
-
-		cout << "tiempo_geometria_microseconds: " << tiempo_rayos << endl;
-		cout << "tiempo_matrices_microseconds: " << discretizacion.tiempo_armado_matrices() << endl;
-		cout << "tiempo_cml_microseconds: " << discretizacion.tiempo_cml() << endl;
 	}
 	catch(runtime_error e){
 		cout << "error: " << e.what() << endl;
