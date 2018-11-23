@@ -6,25 +6,12 @@
 /* Imprime una matriz */
 std::ostream& operator<<(std::ostream& os, const Matrix& M){
 
-	os << M.name() << "(" << M.rows() << "x" << M.cols() << "):\n";
-	std::vector<size_t> col_width(M.cols(), 0);
-
-	for(size_t i = BASE_INDEX; i < M.rows() + BASE_INDEX; i++)
-		for(size_t j = BASE_INDEX; j < M.cols() + BASE_INDEX; j++){
-			size_t number_width = std::to_string(M(i,j)).length();
-			col_width[j-BASE_INDEX] = std::max(col_width[j-BASE_INDEX], number_width);
-		}
-
-
-	for(size_t i = BASE_INDEX; i < M.rows() + BASE_INDEX; i++){
-		os << "[";
-		for(size_t j = BASE_INDEX; j < M.cols() + BASE_INDEX; j++){
-			std::string num = std::to_string(M(i,j));
-			for(size_t k = 0; k < col_width[j-BASE_INDEX] - num.length(); k++)	os << " ";
-			auto c = (j != M.cols() + BASE_INDEX -1) ? "|" : "]\n";
-			os << " " << num << " " << c;
-		}
-	}
+	for(int i = 0; i < M.rows() ; i++){
+        for(int j = 0; j < M.cols(); j++){
+            os << M(i,j) << " ";
+        }
+        os << std::endl;
+    }
 
 	return os;
 }
@@ -120,14 +107,12 @@ Matrix operator*(const Matrix& A, const Matrix& B){
 	Matrix C(A.rows(), B.cols());
 
 	for(size_t i = BASE_INDEX; i < A.rows() + BASE_INDEX; i++){
-		for(size_t j = BASE_INDEX; j < A.cols() + BASE_INDEX; j++){
-
-			double aij = A(i, j);
-
-			for(size_t k = BASE_INDEX; k < B.cols() + BASE_INDEX; k++){
-				C.insert(i, k, C(i,k) + aij*B(j,k));
-			}
-
+		for(size_t j = BASE_INDEX; j < B.cols() + BASE_INDEX; j++){
+            double acum = 0;
+            for(int k = BASE_INDEX; k < A.cols() + BASE_INDEX ; k++){
+			    acum+= A(i,k)*B(k,j);
+            }
+            C(i,j) = acum;
 		}
 	}
 
@@ -250,10 +235,12 @@ std::tuple<Matrix, Matrix, double> generar_svd(const Matrix& A){
     auto u_s = calcular_autovectores(AtA, AtA.rows());
 	Matrix u = std::get<0>(u_s);
 	Matrix s = std::get<1>(u_s);
-
+    
 	Matrix sq = sqrt_to_all_elems(s);
-	double numero_de_condicion = sq(BASE_INDEX, BASE_INDEX) / sq(sq.rows(), BASE_INDEX);
-
+	double numero_de_condicion = sq(BASE_INDEX, BASE_INDEX) / sq(BASE_INDEX + sq.rows()-1, BASE_INDEX);
+    std::cout << s << std::endl << std::endl;
+    std::cout << sq << std::endl << std::endl;
+    std::cout << std::endl;
     Matrix ut = trasponer(u);
 
     Matrix vt = apply_inverse_sigma(sq, ut*A, A.cols());
@@ -307,13 +294,18 @@ Matrix subMatrix(const Matrix& A, int i1, int i2, int j1, int j2){
     return res;
 }
 
+bool is_relevant(double d){
+    double epsilon = 1e-5;
+    if(d < 0){ return d < epsilon*(-1); }
+    else{ return d > epsilon; }
+}
 
 //Calcula los primeros k autovectores de B
 std::tuple<Matrix, Matrix> calcular_autovectores(Matrix B, size_t k){
 
 	assert(B.rows() == B.cols());
 	size_t n = B.rows();
-	k = (k == 0) ?  B.rows() : std::min(k, B.rows());
+    if(k == 0){k = B.rows();}
 
 	//El vector inicial se calcula random.
 	//Ajustamos iteraciones según nuestro criterio.
@@ -333,7 +325,7 @@ std::tuple<Matrix, Matrix> calcular_autovectores(Matrix B, size_t k){
 
 		//Inicializa un vector random. No importa cual sea
 		for(size_t i = BASE_INDEX; i < n + BASE_INDEX; i++){
-			v.insert(i, BASE_INDEX, rand() % 16);
+			v.insert(i, BASE_INDEX, (1 - 2*(i%2)) );
 		}
 
 		for(int i = 0; i < iteraciones ; i++){
@@ -343,22 +335,24 @@ std::tuple<Matrix, Matrix> calcular_autovectores(Matrix B, size_t k){
 			//Del subespacio generado por alguno de los autovectores de B.
 			v = B*v;
 			//Para evitar que crezcan demasiado los valores de v
-			v = scalar_mult((1/norma_2(v)), v);
+
+            double norma = norma_2(v);
+			v = scalar_mult((1/norma), v);
 		}
 
 		Matrix v_t = trasponer(v); 
 
 		for(size_t i = BASE_INDEX; i < n + BASE_INDEX; i++){
-			//Insertas el autovalor i en la columna correspondiente de C
+			//Insertas el autovector i en la columna correspondiente de C
 			C.insert(i, autovector_actual, v(i, BASE_INDEX));
 		}
 
 		Matrix numer = B*v;
 		bool escape = false;
-		double autovalor_asociado;
+		double autovalor_asociado = 0;
 		for(int val = 0; val < v.rows() && escape==false; val++){
 			double denom = v(val,0);
-			if(denom!=0){
+			if( is_relevant(denom) ){
 				autovalor_asociado = numer(val,0)/denom;
 			    escape = true;
 			}
@@ -367,7 +361,14 @@ std::tuple<Matrix, Matrix> calcular_autovectores(Matrix B, size_t k){
 
 		if(autovector_actual != n + BASE_INDEX - 1){
 			// Elimina el autoespacio asociado al autovector calculado de la base de autovectores de B (vìa deflacion)
+            //std::cout << B << std::endl << std::endl;
+            std::cout << v(BASE_INDEX,BASE_INDEX) << ", " << v(BASE_INDEX+1, BASE_INDEX) << std::endl ;
+            std::cout << "autovalores : " << autovalor_asociado <<", " << numer(BASE_INDEX+1, BASE_INDEX)/v(BASE_INDEX+1, BASE_INDEX) << std::endl ;
+            
+            std::cout << numer(BASE_INDEX,BASE_INDEX)<< ", " << numer(BASE_INDEX+1, BASE_INDEX) << std::endl ;
+            //std::cout << numer*v_t << std::endl << std::endl;
 			B = (B - numer*v_t);
+            //std::cout << B << std::endl << std::endl;
 		}
 
 	}
