@@ -243,7 +243,7 @@ Matrix resolver_sistema_con_svd(const Matrix& v, const Matrix& sInv_ut, const Ma
 	return v * (sInv_ut * b);
 }
 
-std::tuple<Matrix, Matrix> generar_svd(const Matrix& A){
+std::tuple<Matrix, Matrix, double> generar_svd(const Matrix& A){
     assert(A.cols() == b.rows() && b.cols() == 1);
 
     Matrix AtA = A.mt_times_m();
@@ -253,7 +253,6 @@ std::tuple<Matrix, Matrix> generar_svd(const Matrix& A){
 
 	Matrix sq = sqrt_to_all_elems(s);
 	double numero_de_condicion = sq(BASE_INDEX, BASE_INDEX) / sq(sq.rows(), BASE_INDEX);
-	std::cout << "numero_de_condicion: " << numero_de_condicion << std::endl;
 
     Matrix ut = trasponer(u);
 
@@ -261,7 +260,7 @@ std::tuple<Matrix, Matrix> generar_svd(const Matrix& A){
 
     Matrix sInv_ut = apply_inverse_sigma(sq, ut, A.cols());
 
-    return std::make_tuple(trasponer(vt), sInv_ut);
+    return std::make_tuple(trasponer(vt), sInv_ut, numero_de_condicion);
 }
 
 Matrix sqrt_to_all_elems(const Matrix& A) {
@@ -327,7 +326,10 @@ std::tuple<Matrix, Matrix> calcular_autovectores(Matrix B, size_t k){
 	//calcular n autovectores
 	for(size_t autovector_actual = BASE_INDEX; autovector_actual < k + BASE_INDEX; autovector_actual++){
 
-		std::cout << "debug: Calculando autovector nº " << (1 + autovector_actual) << " / " << k << std::endl;
+
+		if(0 == k%100){
+			std::cout << "debug: Calculando autovector nº " << (1 + autovector_actual) << " / " << k << std::endl;
+		}
 
 		//Inicializa un vector random. No importa cual sea
 		for(size_t i = BASE_INDEX; i < n + BASE_INDEX; i++){

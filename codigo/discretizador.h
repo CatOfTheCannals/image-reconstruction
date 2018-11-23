@@ -20,6 +20,7 @@ private:
 
 	Matrix v;
 	Matrix sInv_ut;
+	double _numero_de_condicion;
 
 	std::vector< std::pair< std::pair<int, int>, std::pair<int, int> > > _rayos;
 	size_t _n;
@@ -73,27 +74,26 @@ public:
 		auto matrices = matrices_del_sistema(); //CALCULAR D y t
 		auto end = std::chrono::system_clock::now();
 		_tiempo_matrices = std::chrono::duration_cast<std::chrono::microseconds>(end - begin).count();
-		std::cout << "matrices creadas" << std::endl;
+		std::cout << "debug: Matrices de rayos creadas." << std::endl;
 
 		this->D = matrices.first;
 		this->t = matrices.second;
 
 		 begin = std::chrono::system_clock::now();
-		auto v_and_sInv_ut = generar_svd(D);
+		auto v_and_sInv_ut_and_condition_number = generar_svd(D);
 		 end = std::chrono::system_clock::now();
 		_tiempo_autovectores = std::chrono::duration_cast<std::chrono::microseconds>(end - begin).count();
-		std::cout << "autovectores calculados" << std::endl;
+		std::cout << "debug: Factorizacion SVD calculada." << std::endl;
 
-		this->v = std::get<0>(v_and_sInv_ut);
-		this->sInv_ut = std::get<1>(v_and_sInv_ut);
+		this->v = std::get<0>(v_and_sInv_ut_and_condition_number);
+		this->sInv_ut = std::get<1>(v_and_sInv_ut_and_condition_number);
+		this->_numero_de_condicion = std::get<2>(v_and_sInv_ut_and_condition_number);
 
 	}
 
 
 	Matrix ejecutar_analisis_tomografico(const double r){
 		agregar_ruido(t, r);
-		std::cout << "ruido y transposicion exitoses" << std::endl;
-
 		auto begin = std::chrono::system_clock::now();
 		Matrix x = resolver_sistema_con_svd(this->v, this->sInv_ut, t);
 
@@ -103,8 +103,6 @@ public:
 		auto end = std::chrono::system_clock::now();
 		_tiempo_cml = std::chrono::duration_cast<std::chrono::microseconds>(end - begin).count();
 
-		std::cout << "sistema resuelto" << std::endl;
-	  	
 	  	return x;
 
 	}
@@ -121,6 +119,9 @@ public:
 		return _tiempo_autovectores;
 	}
 
+	double numero_de_condicion(){
+		return _numero_de_condicion;
+	}
 
 private:
 
@@ -156,7 +157,6 @@ private:
 		std::vector<Matrix::value_type> num_vel(_n*_n, Matrix::value_type(0));
 
 
-		std::cout << "debug: _rayos.size() " << _rayos.size() << std::endl;
 		//trazar rayo:
 		//y = redondear(((x-x0)/(x1-x0))*(y1-y0) + y0) (recta que pasa por 2 puntos (x0, y0), (x1, y1) con su img en el conjunto N)
 		for(size_t i = 0; i < _rayos.size(); i++){

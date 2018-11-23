@@ -73,7 +73,7 @@ Matrix resolver_sistema(const Matrix& A, const Matrix& b);
 
 Matrix resolver_sistema_con_svd(const Matrix& v, const Matrix& sInv_ut, const Matrix& b);
 
-std::tuple<Matrix, Matrix> generar_svd(const Matrix& A);
+std::tuple<Matrix, Matrix, double> generar_svd(const Matrix& A);
 
 Matrix sqrt_to_all_elems(const Matrix& A);
 

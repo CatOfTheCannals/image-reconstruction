@@ -242,10 +242,13 @@ int main(int argc, char** argv){
 
 	  	std::chrono::system_clock::time_point end = std::chrono::system_clock::now();
 	  	double tiempo_rayos = std::chrono::duration_cast<std::chrono::microseconds>(end - begin).count();
-		std::cout << "ejecutar_analisis_tomografico" << std::endl;
+
+		std::cout << "debug: Ejecutando analisis tomografico." << std::endl;
+
 		discretizacion.setup_matrices();
+
 		vector<double> ruidos = {0,10,20,30,40,50};
-		std::cout << "csv: ruido,tiempo_geometria_microseconds,tiempo_matrices_microseconds,tiempo_cml_microseconds,tiempo_autovectores_microseconds" << std::endl;
+		std::cout << "csv: ruido,tiempo_geometria_microseconds,tiempo_matrices_microseconds,tiempo_cml_microseconds,tiempo_autovectores_microseconds,numero_de_condicion" << std::endl;
 		for (double r : ruidos) {
 			Matrix x = discretizacion.ejecutar_analisis_tomografico(r);
 			std::cout << "debug: analisis executed" << std::endl;
@@ -265,8 +268,20 @@ int main(int argc, char** argv){
 				throw std::runtime_error("Error guardando imagen");
 			}
 			delete[] data;
-			std::cout << "csv: " << r <<","<< tiempo_rayos<<","<<  discretizacion.tiempo_armado_matrices()<<","<< discretizacion.tiempo_cml()
-					  << "," << discretizacion.tiempo_autovectores() << std::endl;
+			std::cout << "csv: "
+					  << r <<","
+					  << tiempo_rayos <<","
+					  << discretizacion.tiempo_armado_matrices() <<","
+					  << discretizacion.tiempo_cml() << ","
+					  << discretizacion.tiempo_autovectores() << ","
+					  << discretizacion.numero_de_condicion() << std::endl;
+
+			std::cout << "tiempo_rayos: "<< tiempo_rayos << std::endl;
+			std::cout << "tiempo_armado_matrices: "<< discretizacion.tiempo_armado_matrices() << std::endl;
+			std::cout << "tiempo_cml: "<< discretizacion.tiempo_cml() << std::endl;
+			std::cout << "tiempo_autovectores: "<< discretizacion.tiempo_autovectores() << std::endl;
+			std::cout << "tiempo_autovectores: "<< discretizacion.tiempo_autovectores() << std::endl;
+			std::cout << "numero_de_condicion: "<< discretizacion.numero_de_condicion() << std::endl;
 
 		}
 
