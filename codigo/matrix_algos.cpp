@@ -229,9 +229,9 @@ Matrix resolver_sistema_con_svd(const Matrix& v, const Matrix& sInv_ut, const Ma
 }
 
 std::tuple<Matrix, Matrix, double> generar_svd(const Matrix& A){
-    assert(A.cols() == b.rows() && b.cols() == 1);
-
+    std::cout << A << std::endl;
     Matrix AtA = A.mt_times_m();
+    std::cout << AtA << std::endl;
     auto u_s = calcular_autovectores(AtA, AtA.rows());
 	Matrix u = std::get<0>(u_s);
 	Matrix s = std::get<1>(u_s);
