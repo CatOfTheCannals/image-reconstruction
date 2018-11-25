@@ -324,7 +324,7 @@ std::tuple<Matrix, Matrix> calcular_autovectores(Matrix B, size_t k){
 	Matrix autovalores(n, 1);
 	Matrix v_anterior(n, 1);
 	Matrix C(n, k);
-	int iteraciones = 15;
+	int iteraciones = 50;
 
 	//calcular n autovectores
 	for(size_t autovector_actual = BASE_INDEX; autovector_actual < k + BASE_INDEX; autovector_actual++){
