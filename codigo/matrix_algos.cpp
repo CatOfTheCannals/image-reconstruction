@@ -300,9 +300,20 @@ bool is_relevant(double d){
     else{ return d > epsilon; }
 }
 
+Matrix producto_externo(double lambda, Matrix& v){
+    assert(v.cols()==1);
+    Matrix res = Matrix(v.rows(),v.rows());
+    for(int i = 0 ; i < v.rows() ; i++){
+        for(int j = 0 ; j < v.rows() ; j++){
+            res.insert(i, j, lambda*v(i,BASE_INDEX)*v(j,BASE_INDEX));
+        }
+    }
+    return res;
+}
+
+
 //Calcula los primeros k autovectores de B
 std::tuple<Matrix, Matrix> calcular_autovectores(Matrix B, size_t k){
-
 	assert(B.rows() == B.cols());
 	size_t n = B.rows();
     if(k == 0){k = B.rows();}
@@ -313,7 +324,7 @@ std::tuple<Matrix, Matrix> calcular_autovectores(Matrix B, size_t k){
 	Matrix autovalores(n, 1);
 	Matrix v_anterior(n, 1);
 	Matrix C(n, k);
-	int iteraciones = 15;
+	int iteraciones = 150;
 
 	//calcular n autovectores
 	for(size_t autovector_actual = BASE_INDEX; autovector_actual < k + BASE_INDEX; autovector_actual++){
@@ -323,33 +334,30 @@ std::tuple<Matrix, Matrix> calcular_autovectores(Matrix B, size_t k){
 			std::cout << "debug: Calculando autovector nº " << (1 + autovector_actual) << " / " << k << std::endl;
 		}
 
-		//Inicializa un vector random. No importa cual sea
 		for(size_t i = BASE_INDEX; i < n + BASE_INDEX; i++){
-			v.insert(i, BASE_INDEX, (1 - 2*(i%2)) );
+			// v.insert(i, BASE_INDEX, (1 - 2*(i%2)) );
+			v.insert(i, BASE_INDEX, rand()%100 );
 		}
 
 		for(int i = 0; i < iteraciones ; i++){
-			
 			v_anterior = v;
-			//Itera sobre el producto de B*v. Cuantas mas iteraciones se hagan. Mas cerca va a estar v
-			//Del subespacio generado por alguno de los autovectores de B.
 			v = B*v;
-			//Para evitar que crezcan demasiado los valores de v
 
             double norma = norma_2(v);
-			v = scalar_mult((1/norma), v);
+            double inv_norm = 1/norma;
+			v = scalar_mult(inv_norm, v);
 		}
 
 		Matrix v_t = trasponer(v); 
 
 		for(size_t i = BASE_INDEX; i < n + BASE_INDEX; i++){
-			//Insertas el autovector i en la columna correspondiente de C
 			C.insert(i, autovector_actual, v(i, BASE_INDEX));
 		}
 
 		Matrix numer = B*v;
 		bool escape = false;
-		double autovalor_asociado = 0;
+		double autovalor_asociado = (v_t*numer)(BASE_INDEX,BASE_INDEX);
+		/*
 		for(int val = 0; val < v.rows() && escape==false; val++){
 			double denom = v(val,0);
 			if( is_relevant(denom) ){
@@ -357,24 +365,20 @@ std::tuple<Matrix, Matrix> calcular_autovectores(Matrix B, size_t k){
 			    escape = true;
 			}
 		}
+		*/
 		autovalores.insert(autovector_actual, BASE_INDEX, autovalor_asociado);
 
-		if(autovector_actual != n + BASE_INDEX - 1){
-			// Elimina el autoespacio asociado al autovector calculado de la base de autovectores de B (vìa deflacion)
-            //std::cout << B << std::endl << std::endl;
-            std::cout << v(BASE_INDEX,BASE_INDEX) << ", " << v(BASE_INDEX+1, BASE_INDEX) << std::endl ;
-            std::cout << "autovalores : " << autovalor_asociado <<", " << numer(BASE_INDEX+1, BASE_INDEX)/v(BASE_INDEX+1, BASE_INDEX) << std::endl ;
-            
-            std::cout << numer(BASE_INDEX,BASE_INDEX)<< ", " << numer(BASE_INDEX+1, BASE_INDEX) << std::endl ;
-            //std::cout << numer*v_t << std::endl << std::endl;
-			B = (B - numer*v_t);
-            //std::cout << B << std::endl << std::endl;
-		}
-
+        std::cout << v(BASE_INDEX,BASE_INDEX) << ", " << v(BASE_INDEX+1, BASE_INDEX) << std::endl ;
+        std::cout << "autovalores : " << autovalor_asociado <<", " << numer(BASE_INDEX+1, BASE_INDEX)/v(BASE_INDEX+1, BASE_INDEX) << std::endl ;
+        std::cout << numer(BASE_INDEX,BASE_INDEX)<< ", " << numer(BASE_INDEX+1, BASE_INDEX) << std::endl ;
+        Matrix extern_prod = producto_externo(autovalor_asociado, v);
+		B = B - extern_prod;
 	}
 
 	return std::make_tuple(C,autovalores);
 }
+
+
 
 Matrix trasponer(const Matrix& A){
 
@@ -387,7 +391,6 @@ Matrix trasponer(const Matrix& A){
 	return C;
 }
 
-inline
 Matrix::value_type norma_2(const Matrix& v){
 	assert(v.cols() == 1);
 

@@ -85,6 +85,8 @@ Matrix subMatrix(const Matrix& A, int i1, int i2, int j1, int j2);
 //La j-esima columna es el autovector asociado al j-esimo autovalor (autovalores ordenados segun valor absoluto)
 std::tuple<Matrix, Matrix> calcular_autovectores(Matrix B, size_t k = 0);
 
+Matrix producto_externo(double lambda, Matrix& v);
+
 //Calcula la traspuesta de la matriz A. A(i,j) = A_t(j,i)
 Matrix trasponer(const Matrix& A);
 
