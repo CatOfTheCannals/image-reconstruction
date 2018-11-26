@@ -358,13 +358,7 @@ std::tuple<Matrix, Matrix> calcular_autovectores(Matrix B, size_t k){
 		bool escape = false;
 		double autovalor_asociado = (v_t*numer)(BASE_INDEX,BASE_INDEX);
 		/*
-		for(int val = 0; val < v.rows() && escape==false; val++){
-			double denom = v(val,0);
-			if( is_relevant(denom) ){
-				autovalor_asociado = numer(val,0)/denom;
-			    escape = true;
-			}
-		}
+		    get_eigenvalue(numer, v);
 		*/
 		autovalores.insert(autovector_actual, BASE_INDEX, autovalor_asociado);
 
@@ -378,7 +372,18 @@ std::tuple<Matrix, Matrix> calcular_autovectores(Matrix B, size_t k){
 	return std::make_tuple(C,autovalores);
 }
 
-
+double get_eigenvalue(const Matrix& numer, const Matrix& v){
+	double autovalor_asociado = 0;
+	bool escape = false;
+	for(int val = 0; val < v.rows() && escape==false; val++){
+		double denom = v(val,0);
+		if( is_relevant(denom) ){
+			autovalor_asociado = numer(val,0)/denom;
+		    escape = true;
+		}
+	}
+	return autovalor_asociado;
+}
 
 Matrix trasponer(const Matrix& A){
 
