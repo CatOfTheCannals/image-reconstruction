@@ -247,43 +247,56 @@ int main(int argc, char** argv){
 
 		discretizacion.setup_matrices();
 
-		vector<double> ruidos = {0,10,20,30,40,50};
-		std::cout << "csv: ruido,tiempo_geometria_microseconds,tiempo_matrices_microseconds,tiempo_cml_microseconds,tiempo_autovectores_microseconds,numero_de_condicion" << std::endl;
-		for (double r : ruidos) {
-			Matrix x = discretizacion.ejecutar_analisis_tomografico(r);
-			std::cout << "debug: analisis executed" << std::endl;
-			//reconstruir imagen
+		// vector<double> ruidos = {0,10,20,30,40,50};
 
-			unsigned short* data = new unsigned short[x.rows()];
-			for(unsigned i = 0; i < x.rows(); i++){
-				if( x(i,0) < 0)
-					x(i,0) = 0;
-				else if(x(i,0) > 255)
-					x(i,0) = 255;
+        std::cout << "csv: "
+                  << "discretization_n,"
+                  << "exp_name,"
+                  << "image,"
+                  << "output_image_name,"
+                  << "rayos,"
+                  << "ruido,"
+                  << "tiempo_geometria_microseconds,"
+                  << "tiempo_matrices_microseconds,"
+                  << "tiempo_cml_microseconds,"
+                  << "tiempo_autovectores_microseconds,"
+                  << "numero_de_condicion"
+                  << std::endl;
 
-				data[i] = (unsigned short)x(i,0);
-			}
+        Matrix x = discretizacion.ejecutar_analisis_tomografico(r);
+        std::cout << "debug: analisis executed" << std::endl;
+        //reconstruir imagen
 
-			if(!SavePPMFile(output_img.c_str(), data, n, n, PPM_LOADER_PIXEL_TYPE_GRAY_16B, NULL)){
-				throw std::runtime_error("Error guardando imagen");
-			}
-			delete[] data;
+        unsigned short* data = new unsigned short[x.rows()];
+        for(unsigned i = 0; i < x.rows(); i++){
+            if( x(i,0) < 0)
+                x(i,0) = 0;
+            else if(x(i,0) > 255)
+                x(i,0) = 255;
 
-			std::cout << "csv: "
-					  << r <<","
-					  << tiempo_rayos <<","
-					  << discretizacion.tiempo_armado_matrices() <<","
-					  << discretizacion.tiempo_cml() << ","
-					  << discretizacion.tiempo_autovectores() << ","
-					  << discretizacion.numero_de_condicion() << std::endl;
+            data[i] = (unsigned short)x(i,0);
+        }
 
-			std::cout << "tiempo_rayos: "<< tiempo_rayos << std::endl;
-			std::cout << "tiempo_armado_matrices: "<< discretizacion.tiempo_armado_matrices() << std::endl;
-			std::cout << "tiempo_cml: "<< discretizacion.tiempo_cml() << std::endl;
-			std::cout << "tiempo_autovectores: "<< discretizacion.tiempo_autovectores() << std::endl;
-			std::cout << "numero_de_condicion: "<< discretizacion.numero_de_condicion() << std::endl;
+        if(!SavePPMFile(output_img.c_str(), data, n, n, PPM_LOADER_PIXEL_TYPE_GRAY_16B, NULL)){
+            throw std::runtime_error("Error guardando imagen");
+        }
+        delete[] data;
 
-		}
+        std::cout << "csv: "
+                  << r <<","
+                  << tiempo_rayos <<","
+                  << discretizacion.tiempo_armado_matrices() <<","
+                  << discretizacion.tiempo_cml() << ","
+                  << discretizacion.tiempo_autovectores() << ","
+                  << discretizacion.numero_de_condicion() << std::endl;
+
+        std::cout << "tiempo_rayos: "<< tiempo_rayos << std::endl;
+        std::cout << "tiempo_armado_matrices: "<< discretizacion.tiempo_armado_matrices() << std::endl;
+        std::cout << "tiempo_cml: "<< discretizacion.tiempo_cml() << std::endl;
+        std::cout << "tiempo_autovectores: "<< discretizacion.tiempo_autovectores() << std::endl;
+        std::cout << "numero_de_condicion: "<< discretizacion.numero_de_condicion() << std::endl;
+
+
 
 	}
 	catch(runtime_error e){
