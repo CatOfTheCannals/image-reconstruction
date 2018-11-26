@@ -77,10 +77,7 @@ Matrix resolver_sistema_con_svd(const Matrix& v, const Matrix& sInv_ut, const Ma
 
 std::tuple<Matrix, Matrix, double> generar_svd(const Matrix& A);
 
-std::tuple<Matrix, Matrix> calcular_autovectores(const Matrix &A, unsigned int num_components);
-
-std::tuple<Matrix, double> powerMethodQ1(Matrix x_0, const Matrix &a);
-std::tuple<Matrix, double> powerMethodQ1(Matrix x_0, const Matrix &a, long N);
+std::tuple<Matrix, Matrix> calcular_autovectores(Matrix B, size_t k);
 
 Matrix sqrt_to_all_elems(const Matrix& A);
 
@@ -95,6 +92,8 @@ Matrix apply_inverse_sigma(const Matrix& s, const Matrix& A, int rows);
 void matrix_stats(const Matrix& A, const std::string name);
 
 Matrix subMatrix(const Matrix& A, int i1, int i2, int j1, int j2);
+
+Matrix producto_externo(double lambda, Matrix& v);
 
 //Calcula la traspuesta de la matriz A. A(i,j) = A_t(j,i)
 Matrix trasponer(const Matrix& A);

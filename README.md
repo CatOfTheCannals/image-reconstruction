@@ -11,4 +11,4 @@ Will create a `build`directory with executable in it.
 
 `./tp3 -params`
 
-
+/readme

@@ -234,62 +234,24 @@ Matrix resolver_sistema(const Matrix& A, const Matrix& b){
 }
 
 std::tuple<Matrix, Matrix, double> generar_svd(const Matrix& A){
-    assert(A.cols() == b.rows() && b.cols() == 1);
-
     Matrix AtA = A.mt_times_m();
-
-
-    /*
-    auto u_s = calcular_autovectores(AtA, AtA.rows());
-	Matrix u = std::get<0>(u_s);
-	Matrix s = std::get<1>(u_s);
-
-    std::cout << "debug: matrix_stats s" << std::endl;
-    matrix_stats(s);
-
-    u.store("./debug_matrices/u.mat");
-    s.store("./debug_matrices/s.mat");
-    */
-
-    Matrix v = Matrix(AtA.rows(), AtA.rows());
-    Matrix s = Matrix(AtA.cols(), 1);
-
-    v.load("./debug_matrices/v_py.mat");
-    s.load("./debug_matrices/s_py.mat");
+    auto v_s = calcular_autovectores(AtA, AtA.rows());
+	Matrix v = std::get<0>(v_s);
+	Matrix s = std::get<1>(v_s);
 
 	Matrix sq = sqrt_to_all_elems(s);
-
 	double numero_de_condicion = sq(BASE_INDEX, BASE_INDEX) / sq(BASE_INDEX + sq.rows()-1, BASE_INDEX);
 
     Matrix u_s = A * v;
-
-    matrix_stats(A, "A");
-
-    matrix_stats(v, "v");
-
-    matrix_stats(u_s, "u_s");
-
     Matrix ut = apply_inverse_sigma(sq, trasponer(u_s), A.cols());
-
-    matrix_stats(ut, "ut");
-
     Matrix sInv_ut = apply_inverse_sigma(sq, ut, A.cols());
-
-    matrix_stats(sInv_ut, "sInv_ut");
 
     return std::make_tuple(v, sInv_ut, numero_de_condicion);
 }
 
 Matrix resolver_sistema_con_svd(const Matrix& v, const Matrix& sInv_ut, const Matrix& b){
-    Matrix sInv_ut_b = (sInv_ut * b);
+    return v * (sInv_ut * b);
 
-    matrix_stats(sInv_ut_b, "sInv_ut_b");
-
-    Matrix v_sInv_ut_b = v * (sInv_ut_b);
-
-    matrix_stats(v_sInv_ut_b, "v_sInv_ut_b");
-
-    return v_sInv_ut_b;
 }
 
 Matrix sqrt_to_all_elems(const Matrix& A) {
@@ -411,56 +373,76 @@ bool is_relevant(double d){
     else{ return d > epsilon; }
 }
 
-std::tuple<Matrix, Matrix> calcular_autovectores(const Matrix &A, unsigned int num_components){
-
-    Matrix X(A);
-
-    assert((num_components <= X.rows()) && (num_components <= X.cols()));
-
-    Matrix lambdas(num_components, 1);
-    Matrix k_eigen_vectors(X.rows(), num_components);
-
-    for (auto i = 0; i < num_components; i++) {
-
-        Matrix x_0( random(A.rows(), 1));
-        Matrix eigen_vector(A.rows(), 1);
-        double eigen_value;
-        // compute i_th eigen vector and its value
-        std::tie(eigen_vector, eigen_value) = powerMethodQ1(x_0, X);
-        // cout << i << " eigen value: " << eigen_value << endl;
-
-        for (auto q = 0; q < k_eigen_vectors.rows(); q++) {
-            k_eigen_vectors.insert(q, i, eigen_vector(q, 0)); // fill eigen vector in res matrix
+Matrix producto_externo(double lambda, Matrix& v){
+    assert(v.cols()==1);
+    Matrix res = Matrix(v.rows(),v.rows());
+    for(int i = 0 ; i < v.rows() ; i++){
+        for(int j = 0 ; j < v.rows() ; j++){
+            res.insert(i, j, lambda*v(i,BASE_INDEX)*v(j,BASE_INDEX));
         }
-        lambdas.insert(i, 0, eigen_value);
-        if(i%100==0){ std::cout << "PCA i : " << i << std::endl;}
-        auto external = eigen_vector*trasponer(eigen_vector);
-        X = X - scalar_mult(eigen_value, external);
     }
-
-    return std::make_tuple(k_eigen_vectors, lambdas);
+    return res;
 }
 
-std::tuple<Matrix, double> powerMethodQ1(Matrix x_0, const Matrix &a) {
-    return powerMethodQ1(x_0, a, 15);
-};
 
-std::tuple<Matrix, double> powerMethodQ1(Matrix x_0, const Matrix &a, long N) {
-    for (long i = 0; i < N; i++) {
-        x_0 = a * x_0;
-        x_0 = x_0 / norma_2(x_0);
-    }
+//Calcula los primeros k autovectores de B
+std::tuple<Matrix, Matrix> calcular_autovectores(Matrix B, size_t k){
+	assert(B.rows() == B.cols());
+	size_t n = B.rows();
+	if(k == 0){k = B.rows();}
 
-    Matrix producto = a * x_0;
-    double val = 0.0;
-    for(int i = 0 ; i< x_0.rows() ; i++){
-        if(fabs(x_0(i,0)) > 0.0001){
-            val += producto(i,0)/x_0(i,0);
-        }
-    }
-    val /= x_0.rows();
-    std::tuple<Matrix, double> res = std::make_tuple(x_0, val);
-    return res;
+	//El vector inicial se calcula random.
+	//Ajustamos iteraciones según nuestro criterio.
+	Matrix v(n, 1);
+	Matrix autovalores(n, 1);
+	Matrix v_anterior(n, 1);
+	Matrix C(n, k);
+	int iteraciones = 50;
+
+	//calcular n autovectores
+	for(size_t autovector_actual = BASE_INDEX; autovector_actual < k + BASE_INDEX; autovector_actual++){
+		for(size_t i = BASE_INDEX; i < n + BASE_INDEX; i++){
+			// v.insert(i, BASE_INDEX, (1 - 2*(i%2)) );
+			v.insert(i, BASE_INDEX, rand()%100 );
+		}
+
+		for(int i = 0; i < iteraciones ; i++){
+			v_anterior = v;
+			v = B*v;
+
+			double norma = norma_2(v);
+			double inv_norm = 1/norma;
+			v = scalar_mult(inv_norm, v);
+		}
+
+		Matrix v_t = trasponer(v);
+
+		for(size_t i = BASE_INDEX; i < n + BASE_INDEX; i++){
+			C.insert(i, autovector_actual, v(i, BASE_INDEX));
+		}
+
+		Matrix numer = B*v;
+		bool escape = false;
+		double autovalor_asociado = (v_t*numer)(BASE_INDEX,BASE_INDEX);
+		/*
+		for(int val = 0; val < v.rows() && escape==false; val++){
+			double denom = v(val,0);
+			if( is_relevant(denom) ){
+				autovalor_asociado = numer(val,0)/denom;
+			    escape = true;
+			}
+		}
+		*/
+		autovalores.insert(autovector_actual, BASE_INDEX, autovalor_asociado);
+
+		std::cout << v(BASE_INDEX,BASE_INDEX) << ", " << v(BASE_INDEX+1, BASE_INDEX) << std::endl ;
+		std::cout << "autovalores : " << autovalor_asociado <<", " << numer(BASE_INDEX+1, BASE_INDEX)/v(BASE_INDEX+1, BASE_INDEX) << std::endl ;
+		std::cout << numer(BASE_INDEX,BASE_INDEX)<< ", " << numer(BASE_INDEX+1, BASE_INDEX) << std::endl ;
+		Matrix extern_prod = producto_externo(autovalor_asociado, v);
+		B = B - extern_prod;
+	}
+
+	return std::make_tuple(C,autovalores);
 }
 
 Matrix random(int rows, int cols) {
@@ -474,6 +456,8 @@ Matrix random(int rows, int cols) {
     return res;
 }
 
+
+
 Matrix trasponer(const Matrix& A){
 
 	Matrix C(A.cols(), A.rows());
@@ -485,7 +469,6 @@ Matrix trasponer(const Matrix& A){
 	return C;
 }
 
-inline
 Matrix::value_type norma_2(const Matrix& v){
 	assert(v.cols() == 1);
 
