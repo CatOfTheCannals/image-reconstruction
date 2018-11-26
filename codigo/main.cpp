@@ -268,6 +268,7 @@ int main(int argc, char** argv){
 				throw std::runtime_error("Error guardando imagen");
 			}
 			delete[] data;
+
 			std::cout << "csv: "
 					  << r <<","
 					  << tiempo_rayos <<","
@@ -279,7 +280,6 @@ int main(int argc, char** argv){
 			std::cout << "tiempo_rayos: "<< tiempo_rayos << std::endl;
 			std::cout << "tiempo_armado_matrices: "<< discretizacion.tiempo_armado_matrices() << std::endl;
 			std::cout << "tiempo_cml: "<< discretizacion.tiempo_cml() << std::endl;
-			std::cout << "tiempo_autovectores: "<< discretizacion.tiempo_autovectores() << std::endl;
 			std::cout << "tiempo_autovectores: "<< discretizacion.tiempo_autovectores() << std::endl;
 			std::cout << "numero_de_condicion: "<< discretizacion.numero_de_condicion() << std::endl;
 
