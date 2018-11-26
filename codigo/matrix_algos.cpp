@@ -430,8 +430,9 @@ std::tuple<Matrix, Matrix> calcular_autovectores(Matrix B, size_t k){
 			double norm_coef = 100;
 			for(int retry = 0; retry < retries; retry++){norm_coef*=10;}
 			Matrix v_t_primo = scalar_mult(norm_coef, v_t);
-		    Matrix numer_primo = scalar_mult(1/norm_coef, numer);
+		    Matrix numer_primo = scalar_mult(norm_coef, numer);
             autovalor_asociado = (v_t_primo*numer_primo)(BASE_INDEX,BASE_INDEX);
+            autovalor_asociado /= norm_coef*norm_coef;
 		}
 
 		double autovalor_segundo = numer(BASE_INDEX+1, BASE_INDEX)/v(BASE_INDEX+1, BASE_INDEX);
