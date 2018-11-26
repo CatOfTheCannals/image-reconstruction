@@ -38,6 +38,8 @@ Matrix partial_matrix_mult(const Matrix& A, const Matrix& B, size_t l, size_t m,
 /*Multiplicacion de matrices */
 Matrix operator*(const Matrix& A, const Matrix& B);
 
+Matrix operator/(const Matrix& A, const double& scalar);
+
 /*Igualdad de matrices ==*/
 bool operator==(const Matrix& A, const Matrix& B);
 
@@ -75,15 +77,21 @@ Matrix resolver_sistema_con_svd(const Matrix& v, const Matrix& sInv_ut, const Ma
 
 std::tuple<Matrix, Matrix, double> generar_svd(const Matrix& A);
 
+std::tuple<Matrix, Matrix> calcular_autovectores(Matrix B, size_t k);
+
 Matrix sqrt_to_all_elems(const Matrix& A);
+
+Matrix random(int rows, int cols);
+
+bool is_zero(const Matrix& A);
+
+bool has_nan(const Matrix& A);
 
 Matrix apply_inverse_sigma(const Matrix& s, const Matrix& A, int rows);
 
-Matrix subMatrix(const Matrix& A, int i1, int i2, int j1, int j2);
+void matrix_stats(const Matrix& A, const std::string name);
 
-//Calcula los primeros k autovectores de B y devuelve una matriz en la que
-//La j-esima columna es el autovector asociado al j-esimo autovalor (autovalores ordenados segun valor absoluto)
-std::tuple<Matrix, Matrix> calcular_autovectores(Matrix B, size_t k = 0);
+Matrix subMatrix(const Matrix& A, int i1, int i2, int j1, int j2);
 
 Matrix producto_externo(double lambda, Matrix& v);
 

@@ -119,6 +119,15 @@ Matrix operator*(const Matrix& A, const Matrix& B){
 	return C;
 }
 
+Matrix operator/(const Matrix& A, const double& scalar){
+    Matrix C(A.rows(), A.cols());
+    for(size_t i = BASE_INDEX; i < A.rows() + BASE_INDEX; i++)
+        for(size_t j = BASE_INDEX; j < A.cols() + BASE_INDEX; j++)
+            C.insert(i,j ,A(i,j)/scalar);
+
+    return C;
+}
+
 //B es una matrix cuadrada diagonal
 Matrix diagonal_mult(const Matrix& A, const Matrix& B){
 
@@ -224,30 +233,25 @@ Matrix resolver_sistema(const Matrix& A, const Matrix& b){
 	return backward_substitution(tmp);
 }
 
-Matrix resolver_sistema_con_svd(const Matrix& v, const Matrix& sInv_ut, const Matrix& b){
-	return v * (sInv_ut * b);
-}
-
 std::tuple<Matrix, Matrix, double> generar_svd(const Matrix& A){
-    std::cout << A << std::endl;
     Matrix AtA = A.mt_times_m();
-    std::cout << AtA << std::endl;
-    auto u_s = calcular_autovectores(AtA, AtA.rows());
-	Matrix u = std::get<0>(u_s);
-	Matrix s = std::get<1>(u_s);
-    
+    auto v_s = calcular_autovectores(AtA, AtA.rows());
+	Matrix v = std::get<0>(v_s);
+	Matrix s = std::get<1>(v_s);
+
 	Matrix sq = sqrt_to_all_elems(s);
 	double numero_de_condicion = sq(BASE_INDEX, BASE_INDEX) / sq(BASE_INDEX + sq.rows()-1, BASE_INDEX);
-    std::cout << s << std::endl << std::endl;
-    std::cout << sq << std::endl << std::endl;
-    std::cout << std::endl;
-    Matrix ut = trasponer(u);
 
-    Matrix vt = apply_inverse_sigma(sq, ut*A, A.cols());
-
+    Matrix u_s = A * v;
+    Matrix ut = apply_inverse_sigma(sq, trasponer(u_s), A.cols());
     Matrix sInv_ut = apply_inverse_sigma(sq, ut, A.cols());
 
-    return std::make_tuple(trasponer(vt), sInv_ut, numero_de_condicion);
+    return std::make_tuple(v, sInv_ut, numero_de_condicion);
+}
+
+Matrix resolver_sistema_con_svd(const Matrix& v, const Matrix& sInv_ut, const Matrix& b){
+    return v * (sInv_ut * b);
+
 }
 
 Matrix sqrt_to_all_elems(const Matrix& A) {
@@ -260,13 +264,82 @@ Matrix sqrt_to_all_elems(const Matrix& A) {
 	return res;
 }
 
+void matrix_stats(const Matrix& A, const std::string name) {
+    double epsilon = 0.0001;
+    int nans = 0;
+    int zeros= 0;
+    int negatives = 0;
+
+    std::cout << "debug: __matrix_stats__" << name << std::endl;
+
+    std::cout << "debug: rows " << A.rows() << std::endl;
+    std::cout << "debug: cols " << A.cols() << std::endl;
+
+    for (int  i = 0;  i < A.rows(); ++ i) {
+        for (int j = 0; j < A.cols(); ++j) {
+            if(isnan(A(i,j))) {
+                nans ++;
+            } else if(fabs(A(i,j)) < epsilon ) {
+                zeros ++;
+            } else if(A(i,j) < 0) {
+                negatives ++;
+            } else {
+                // std::cout << "debug: s " << i << " = " << A(i,0) << std::endl;
+            }
+        }
+    }
+    std::cout << "debug: nans " << nans << std::endl;
+    std::cout << "debug: zeros " << zeros << std::endl;
+    std::cout << "debug: negatives " << negatives << std::endl;
+
+}
+
+bool has_nan(const Matrix& A) {
+    bool res = false;
+    for (int  i = 0;  i < A.rows(); ++ i) {
+        for (int j = 0; j < A.cols(); ++j) {
+            if(isnan(A(i,j))) {
+                res = true;
+                break;
+            }
+        }
+    }
+    return res;
+}
+
+bool is_zero(const Matrix& A) {
+    bool res = true;
+    double epsilon = 0.0001;
+
+    for (int  i = 0;  i < A.rows(); ++ i) {
+        for (int j = 0; j < A.cols(); ++j) {
+            if(fabs(A(i,j)) > epsilon ) {
+                res = false;
+                break;
+            }
+        }
+    }
+    return res;
+}
+
+
 Matrix apply_inverse_sigma(const Matrix& s, const Matrix& A, int rows) {
 
     Matrix res = subMatrix(A, 0, rows-1, 0, A.cols()-1);
     // for i, singular_value in enumerate(s):
     for (int  i = 0;  i < s.rows(); ++ i) {
         for (int j = 0; j < res.cols(); ++j) {
-            res.insert(i,j, res(i,j) / s(i, 0));
+
+            double val = res(i,j) / s(i, 0);
+            if(isnan(val)) {
+                std::cout << "debug: nan appeared at " << i << ", " << j << std::endl;
+                std::cout << "debug: previous val " << res(i,j) << std::endl;
+                std::cout << "debug: sigma " << s(i,0) << std::endl;
+                std::cout << std::endl;
+            }
+
+            res.insert(i,j, val);
+
         }
     }
     return res;
@@ -316,7 +389,7 @@ Matrix producto_externo(double lambda, Matrix& v){
 std::tuple<Matrix, Matrix> calcular_autovectores(Matrix B, size_t k){
 	assert(B.rows() == B.cols());
 	size_t n = B.rows();
-    if(k == 0){k = B.rows();}
+	if(k == 0){k = B.rows();}
 
 	//El vector inicial se calcula random.
 	//Ajustamos iteraciones según nuestro criterio.
@@ -328,12 +401,6 @@ std::tuple<Matrix, Matrix> calcular_autovectores(Matrix B, size_t k){
 
 	//calcular n autovectores
 	for(size_t autovector_actual = BASE_INDEX; autovector_actual < k + BASE_INDEX; autovector_actual++){
-
-
-		if(0 == k%100){
-			std::cout << "debug: Calculando autovector nº " << (1 + autovector_actual) << " / " << k << std::endl;
-		}
-
 		for(size_t i = BASE_INDEX; i < n + BASE_INDEX; i++){
 			// v.insert(i, BASE_INDEX, (1 - 2*(i%2)) );
 			v.insert(i, BASE_INDEX, rand()%100 );
@@ -343,12 +410,12 @@ std::tuple<Matrix, Matrix> calcular_autovectores(Matrix B, size_t k){
 			v_anterior = v;
 			v = B*v;
 
-            double norma = norma_2(v);
-            double inv_norm = 1/norma;
+			double norma = norma_2(v);
+			double inv_norm = 1/norma;
 			v = scalar_mult(inv_norm, v);
 		}
 
-		Matrix v_t = trasponer(v); 
+		Matrix v_t = trasponer(v);
 
 		for(size_t i = BASE_INDEX; i < n + BASE_INDEX; i++){
 			C.insert(i, autovector_actual, v(i, BASE_INDEX));
@@ -362,10 +429,10 @@ std::tuple<Matrix, Matrix> calcular_autovectores(Matrix B, size_t k){
 		*/
 		autovalores.insert(autovector_actual, BASE_INDEX, autovalor_asociado);
 
-        std::cout << v(BASE_INDEX,BASE_INDEX) << ", " << v(BASE_INDEX+1, BASE_INDEX) << std::endl ;
-        std::cout << "autovalores : " << autovalor_asociado <<", " << numer(BASE_INDEX+1, BASE_INDEX)/v(BASE_INDEX+1, BASE_INDEX) << std::endl ;
-        std::cout << numer(BASE_INDEX,BASE_INDEX)<< ", " << numer(BASE_INDEX+1, BASE_INDEX) << std::endl ;
-        Matrix extern_prod = producto_externo(autovalor_asociado, v);
+		std::cout << v(BASE_INDEX,BASE_INDEX) << ", " << v(BASE_INDEX+1, BASE_INDEX) << std::endl ;
+		std::cout << "autovalores : " << autovalor_asociado <<", " << numer(BASE_INDEX+1, BASE_INDEX)/v(BASE_INDEX+1, BASE_INDEX) << std::endl ;
+		std::cout << numer(BASE_INDEX,BASE_INDEX)<< ", " << numer(BASE_INDEX+1, BASE_INDEX) << std::endl ;
+		Matrix extern_prod = producto_externo(autovalor_asociado, v);
 		B = B - extern_prod;
 	}
 
@@ -384,6 +451,19 @@ double get_eigenvalue(const Matrix& numer, const Matrix& v){
 	}
 	return autovalor_asociado;
 }
+
+Matrix random(int rows, int cols) {
+    Matrix res(rows, cols);
+    srand (time(NULL));
+    for (std::size_t i = 0; i < rows; i++) {
+        for (std::size_t j = 0; j < cols; j++) {
+            res.insert(i, j, rand() % 100);
+        }
+    }
+    return res;
+}
+
+
 
 Matrix trasponer(const Matrix& A){
 
