@@ -422,7 +422,6 @@ std::tuple<Matrix, Matrix> calcular_autovectores(Matrix B, size_t k){
 		}
 
 		Matrix numer = B*v;
-		bool escape = false;
 		double autovalor_asociado = (v_t*numer)(BASE_INDEX,BASE_INDEX);
 		/*
 		    get_eigenvalue(numer, v);
