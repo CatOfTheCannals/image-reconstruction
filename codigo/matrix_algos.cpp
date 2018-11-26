@@ -397,8 +397,9 @@ std::tuple<Matrix, Matrix> calcular_autovectores(Matrix B, size_t k){
 	Matrix autovalores(n, 1);
 	Matrix v_anterior(n, 1);
 	Matrix C(n, k);
-	int iteraciones = 50;
-
+	int iteraciones = 100;
+	int MAX_RETRIES = 5;
+    int retries = 0;
 	//calcular n autovectores
 	for(size_t autovector_actual = BASE_INDEX; autovector_actual < k + BASE_INDEX; autovector_actual++){
 		for(size_t i = BASE_INDEX; i < n + BASE_INDEX; i++){
@@ -422,17 +423,50 @@ std::tuple<Matrix, Matrix> calcular_autovectores(Matrix B, size_t k){
 		}
 
 		Matrix numer = B*v;
-		double autovalor_asociado = (v_t*numer)(BASE_INDEX,BASE_INDEX);
+		double autovalor_asociado = 0;
+		if(retries==0){
+            autovalor_asociado = (v_t*numer)(BASE_INDEX,BASE_INDEX);
+		} else {
+			double norm_coef = 100;
+			for(int retry = 0; retry < retries; retry++){norm_coef*=10;}
+			Matrix v_t_primo = scalar_mult(norm_coef, v_t);
+		    Matrix numer_primo = scalar_mult(1/norm_coef, numer);
+            autovalor_asociado = (v_t_primo*numer_primo)(BASE_INDEX,BASE_INDEX);
+		}
+
+		double autovalor_segundo = numer(BASE_INDEX+1, BASE_INDEX)/v(BASE_INDEX+1, BASE_INDEX);
+
 		/*
 		    get_eigenvalue(numer, v);
 		*/
 		autovalores.insert(autovector_actual, BASE_INDEX, autovalor_asociado);
 
 		std::cout << v(BASE_INDEX,BASE_INDEX) << ", " << v(BASE_INDEX+1, BASE_INDEX) << std::endl ;
-		std::cout << "autovalores : " << autovalor_asociado <<", " << numer(BASE_INDEX+1, BASE_INDEX)/v(BASE_INDEX+1, BASE_INDEX) << std::endl ;
+		std::cout << "autovalores : " << autovalor_asociado <<", " << autovalor_segundo << std::endl ;
 		std::cout << numer(BASE_INDEX,BASE_INDEX)<< ", " << numer(BASE_INDEX+1, BASE_INDEX) << std::endl ;
-		Matrix extern_prod = producto_externo(autovalor_asociado, v);
-		B = B - extern_prod;
+
+		bool ruined = false;
+		if(autovalor_asociado < 0 || autovalor_segundo < 0){
+            ruined = true;
+			std::cout << autovalor_asociado << ", " << autovalor_segundo << std::endl ;
+			std::cout << "We fucked up. Trying again." << std::endl ;
+		}
+		if(!ruined){
+			Matrix extern_prod = producto_externo(autovalor_asociado, v);
+		    B = B - extern_prod;
+		    retries = 0;
+		} else {
+			retries++;
+			if(retries > MAX_RETRIES){
+				std::cout << "We fucked up too much. Suicide is the only option now" << std::endl;
+				throw std::runtime_error("Abortando. ");
+
+			} else {
+				autovector_actual--;
+			}
+			
+		}
+		
 	}
 
 	return std::make_tuple(C,autovalores);
