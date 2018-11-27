@@ -426,13 +426,15 @@ std::tuple<Matrix, Matrix> calcular_autovectores(Matrix B, size_t k){
 		double autovalor_asociado = 0;
 		if(retries==0){
             autovalor_asociado = (v_t*numer)(BASE_INDEX,BASE_INDEX);
+            double denom = (v_t*v)(BASE_INDEX,BASE_INDEX); //hopefully, about 1.
+            autovalor_asociado = autovalor_asociado/denom;
 		} else {
-			double norm_coef = 100;
+			double norm_coef = 10;
 			for(int retry = 0; retry < retries; retry++){norm_coef*=10;}
 			Matrix v_t_primo = scalar_mult(norm_coef, v_t);
 		    Matrix numer_primo = scalar_mult(norm_coef, numer);
             autovalor_asociado = (v_t_primo*numer_primo)(BASE_INDEX,BASE_INDEX);
-            autovalor_asociado /= norm_coef*norm_coef;
+            autovalor_asociado /= (norm_coef*norm_coef);
 		}
 
 		double autovalor_segundo = numer(BASE_INDEX+1, BASE_INDEX)/v(BASE_INDEX+1, BASE_INDEX);
@@ -458,9 +460,10 @@ std::tuple<Matrix, Matrix> calcular_autovectores(Matrix B, size_t k){
 		    retries = 0;
 		} else {
 			retries++;
+			std::cout << "Current number of retries: " << retries << std::endl ;
 			if(retries > MAX_RETRIES){
 				std::cout << "We fucked up too much. Suicide is the only option now" << std::endl;
-				throw std::runtime_error("Abortando. ");
+				throw std::runtime_error("Abort. ");
 
 			} else {
 				autovector_actual--;
