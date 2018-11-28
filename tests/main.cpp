@@ -8,6 +8,24 @@
 #include <chrono>
 using namespace std;
 
+void test_mt_times_m(){
+	cout << "test mt_times_m ..." << endl;
+	Matrix m = Matrix(5,5);
+	for(int i = 0; i< 5; i++){
+		for(int j = 0; j< 5; j++){
+			m.insert(i, j, j+i+1);
+		}
+	}
+	cout << "M: " << endl ;
+	cout << m << endl ;
+
+	cout << "Mt times M: " << endl ;
+	Matrix mtm = m.mt_times_m();
+        cout << mtm << endl;
+    cout << "fin mt_times_m ..." << endl;
+
+}
+
 void test_norma_2(){
 	cout << "test norma 2 ..." << endl;
 	Matrix v = Matrix(5,1);
@@ -67,7 +85,7 @@ int main(){
 	test_norma_2(); //TEST OK 
 	test_prod_normal();
 	test_prod_ext();
-    test_autovalores();
-
+//    test_autovalores();
+        test_mt_times_m();
 	return 0;
 }
