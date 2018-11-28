@@ -50,6 +50,7 @@ public:
 			throw std::runtime_error("error: Discretizacion invalida");
 		}
 
+
 	}
 
 	void trazar_rayo(int init_i, int init_j, int end_i, int end_j){
@@ -78,6 +79,10 @@ public:
 
 		this->D = matrices.first;
 		this->t = matrices.second;
+
+		// D.store("../notebooks/debug_matrices/D.mat");
+		// t.store("../notebooks/debug_matrices/t.mat");
+
 
 		 begin = std::chrono::system_clock::now();
 		auto v_and_sInv_ut_and_condition_number = generar_svd(D);

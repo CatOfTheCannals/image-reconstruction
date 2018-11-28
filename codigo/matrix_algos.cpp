@@ -235,16 +235,19 @@ Matrix resolver_sistema(const Matrix& A, const Matrix& b){
 
 std::tuple<Matrix, Matrix, double> generar_svd(const Matrix& A){
     Matrix AtA = A.mt_times_m();
-    auto v_s = calcular_autovectores(AtA, AtA.rows());
-	Matrix v = std::get<0>(v_s);
-	Matrix s = std::get<1>(v_s);
+    auto v_s_k = calcular_autovectores(AtA, AtA.rows());
+    Matrix v = std::get<0>(v_s_k);
+    Matrix s = std::get<1>(v_s_k);
+    double k = std::get<2>(v_s_k);
 
 	Matrix sq = sqrt_to_all_elems(s);
 	double numero_de_condicion = sq(BASE_INDEX, BASE_INDEX) / sq(BASE_INDEX + sq.rows()-1, BASE_INDEX);
 
+    // v tiene k columnas
+
     Matrix u_s = A * v;
-    Matrix ut = apply_inverse_sigma(sq, trasponer(u_s), A.cols());
-    Matrix sInv_ut = apply_inverse_sigma(sq, ut, A.cols());
+    Matrix ut = apply_inverse_sigma(sq, trasponer(u_s), k);
+    Matrix sInv_ut = apply_inverse_sigma(sq, ut, k);
 
     return std::make_tuple(v, sInv_ut, numero_de_condicion);
 }
