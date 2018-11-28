@@ -2,7 +2,7 @@
 .pyc
 
 # jupyter checkpoints
-.ipynb_checkpoints
+notebooks/.ipynb_checkpoints/
 
 # Build dirs
 cmake-build-debug
