@@ -238,7 +238,7 @@ std::tuple<Matrix, Matrix, double, int> generar_svd(const Matrix& A){
     auto v_s_k = calcular_autovectores(AtA);
     Matrix v = std::get<0>(v_s_k);
     Matrix s = std::get<1>(v_s_k);
-    double k = std::get<2>(v_s_k);
+    int k = std::get<2>(v_s_k);
 
 	matrix_stats(v, "v");
 	matrix_stats(s, "s");
@@ -412,10 +412,22 @@ Matrix producto_externo(double lambda, Matrix& v){
     }
     return res;
 }
+Matrix power_method(const Matrix& B, Matrix& v, int iteraciones){
+	assert(B.rows() == B.cols());
+	Matrix v_anterior(B.rows(), 1);
+	for(int i = 0; i < iteraciones ; i++){
+			v_anterior = v;
+			v = B*v;
 
+			double norma = norma_2(v);
+			double inv_norm = 1/norma;
+			v = scalar_mult(inv_norm, v);
+		}
+		return v;
+}
 
 //Calcula los primeros k autovectores de B
-std::tuple<Matrix, Matrix, double> calcular_autovectores(Matrix B){
+std::tuple<Matrix, Matrix, int> calcular_autovectores(Matrix B){
 	assert(B.rows() == B.cols());
 	size_t n = B.rows();
 
@@ -423,7 +435,6 @@ std::tuple<Matrix, Matrix, double> calcular_autovectores(Matrix B){
 	//Ajustamos iteraciones según nuestro criterio.
 	Matrix v(n, 1);
 	Matrix autovalores(n, 1);
-	Matrix v_anterior(n, 1);
 	Matrix C(n, n);
 	int iteraciones = 100;
 	int MAX_RETRIES = 5;
@@ -436,14 +447,7 @@ std::tuple<Matrix, Matrix, double> calcular_autovectores(Matrix B){
 			v.insert(i, BASE_INDEX, rand()%100 );
 		}
 
-		for(int i = 0; i < iteraciones ; i++){
-			v_anterior = v;
-			v = B*v;
-
-			double norma = norma_2(v);
-			double inv_norm = 1/norma;
-			v = scalar_mult(inv_norm, v);
-		}
+		v = power_method(B, v, iteraciones);
 
 		Matrix v_t = trasponer(v);
 
