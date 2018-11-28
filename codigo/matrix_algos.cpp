@@ -233,28 +233,35 @@ Matrix resolver_sistema(const Matrix& A, const Matrix& b){
 	return backward_substitution(tmp);
 }
 
-std::tuple<Matrix, Matrix, double> generar_svd(const Matrix& A){
+std::tuple<Matrix, Matrix, double, int> generar_svd(const Matrix& A){
     Matrix AtA = A.mt_times_m();
-    auto v_s_k = calcular_autovectores(AtA, AtA.rows());
+    auto v_s_k = calcular_autovectores(AtA);
     Matrix v = std::get<0>(v_s_k);
     Matrix s = std::get<1>(v_s_k);
     double k = std::get<2>(v_s_k);
+
+	matrix_stats(v, "v");
+	matrix_stats(s, "s");
 
 	Matrix sq = sqrt_to_all_elems(s);
 	double numero_de_condicion = sq(BASE_INDEX, BASE_INDEX) / sq(BASE_INDEX + sq.rows()-1, BASE_INDEX);
 
     // v tiene k columnas
-
     Matrix u_s = A * v;
-    Matrix ut = apply_inverse_sigma(sq, trasponer(u_s), k);
-    Matrix sInv_ut = apply_inverse_sigma(sq, ut, k);
 
-    return std::make_tuple(v, sInv_ut, numero_de_condicion);
+    Matrix ut = apply_inverse_sigma(sq, trasponer(u_s), k);
+	std::cout << "ut built" << std::endl;
+
+    Matrix sInv_ut = apply_inverse_sigma(sq, ut, k);
+	std::cout << "sInv_ut built" << std::endl;
+
+    return std::make_tuple(v, sInv_ut, numero_de_condicion, k);
 }
 
 Matrix resolver_sistema_con_svd(const Matrix& v, const Matrix& sInv_ut, const Matrix& b){
-    return v * (sInv_ut * b);
-
+	Matrix v_sInv_ut_b = v * (sInv_ut * b);
+	std::cout << "v_sInv_ut_b built" << std::endl;
+    return v_sInv_ut_b;
 }
 
 Matrix sqrt_to_all_elems(const Matrix& A) {
@@ -328,21 +335,40 @@ bool is_zero(const Matrix& A) {
 
 Matrix apply_inverse_sigma(const Matrix& s, const Matrix& A, int rows) {
 
-    Matrix res = subMatrix(A, 0, rows-1, 0, A.cols()-1);
+    Matrix res = subMatrix(A, 0, rows, 0, A.cols()-1);
+	std::cout << "submatrix built " << std::endl;
+
+	matrix_stats(res,"res");
+	matrix_stats(s,"s");
+
     // for i, singular_value in enumerate(s):
     for (int  i = 0;  i < s.rows(); ++ i) {
         for (int j = 0; j < res.cols(); ++j) {
 
-            double val = res(i,j) / s(i, 0);
-            if(isnan(val)) {
-                std::cout << "debug: nan appeared at " << i << ", " << j << std::endl;
-                std::cout << "debug: previous val " << res(i,j) << std::endl;
-                std::cout << "debug: sigma " << s(i,0) << std::endl;
-                std::cout << std::endl;
-            }
+			std::cout << std::endl;
+			std::cout << "res.rows()" << res.rows() << "r es.cols()" << res.cols() << std::endl;
+			std::cout << "s.rows()" << s.rows() << " s.cols()" << s.cols() << std::endl;
+			std::cout << "i" << i << " j" << j << std::endl;
 
-            res.insert(i,j, val);
+			double num = res(i,j);
+			std::cout << "num calculated " << std::endl;
 
+			double den = s(i, 0);
+			std::cout << "den calculated " << std::endl;
+
+			std::cout << "den" << den << std::endl;
+
+			double val = num / den;
+			std::cout << "val calculated " << std::endl;
+
+			if(isnan(val)) {
+				std::cout << "debug: nan appeared at " << i << ", " << j << std::endl;
+				std::cout << "debug: previous val " << res(i,j) << std::endl;
+				std::cout << "debug: sigma " << s(i,0) << std::endl;
+				std::cout << std::endl;
+			}
+			res.insert(i,j, val);
+			std::cout << "val inserted " << std::endl;
         }
     }
     return res;
@@ -389,22 +415,22 @@ Matrix producto_externo(double lambda, Matrix& v){
 
 
 //Calcula los primeros k autovectores de B
-std::tuple<Matrix, Matrix> calcular_autovectores(Matrix B, size_t k){
+std::tuple<Matrix, Matrix, double> calcular_autovectores(Matrix B){
 	assert(B.rows() == B.cols());
 	size_t n = B.rows();
-	if(k == 0){k = B.rows();}
 
 	//El vector inicial se calcula random.
 	//Ajustamos iteraciones según nuestro criterio.
 	Matrix v(n, 1);
 	Matrix autovalores(n, 1);
 	Matrix v_anterior(n, 1);
-	Matrix C(n, k);
+	Matrix C(n, n);
 	int iteraciones = 100;
 	int MAX_RETRIES = 5;
     int retries = 0;
+	int k = n-1;
 	//calcular n autovectores
-	for(size_t autovector_actual = BASE_INDEX; autovector_actual < k + BASE_INDEX; autovector_actual++){
+	for(size_t autovector_actual = BASE_INDEX; autovector_actual < n + BASE_INDEX; autovector_actual++){
 		for(size_t i = BASE_INDEX; i < n + BASE_INDEX; i++){
 			// v.insert(i, BASE_INDEX, (1 - 2*(i%2)) );
 			v.insert(i, BASE_INDEX, rand()%100 );
@@ -466,7 +492,8 @@ std::tuple<Matrix, Matrix> calcular_autovectores(Matrix B, size_t k){
 			std::cout << "Current number of retries: " << retries << std::endl ;
 			if(retries > MAX_RETRIES){
 				std::cout << "We fucked up too much. Suicide is the only option now" << std::endl;
-				throw std::runtime_error("Abort. ");
+				k = autovector_actual - 1;
+				break;
 
 			} else {
 				autovector_actual--;
@@ -476,7 +503,12 @@ std::tuple<Matrix, Matrix> calcular_autovectores(Matrix B, size_t k){
 		
 	}
 
-	return std::make_tuple(C,autovalores);
+    // achicar C
+	Matrix useful_autovecs = subMatrix(C, 0, n-1, 0, k-1);
+    // achicar autovalores
+	Matrix useful_autovals = subMatrix(autovalores, 0, k, 0, 0);
+
+	return std::make_tuple(useful_autovecs, useful_autovals, k);
 }
 
 double get_eigenvalue(const Matrix& numer, const Matrix& v){
