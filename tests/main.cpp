@@ -71,11 +71,11 @@ void test_autovalores(){
 
     for(int i = 0; i< DIM; i++){testy.insert(i, i, DIM+1-i);}
     cout << testy << endl;
-	tuple<Matrix, Matrix> ev_ev = calcular_autovectores(testy, testy.rows());
+	tuple<Matrix, Matrix, int> ev_ev = calcular_autovectores(testy);
 
     Matrix autovalores = get<1>(ev_ev);
     cout << "autovalores rows: " << autovalores.rows() << endl;
-    cout << "autovalores: \n " << autovalores << endl;
+    cout << "autovalores: \n" << autovalores << endl;
     Matrix autovectores = get<0>(ev_ev);
     //cout << "autovectores: "<< autovectores << endl;
     cout << "fin test autovalores ..." << endl;
@@ -85,7 +85,7 @@ int main(){
 	test_norma_2(); //TEST OK 
 	test_prod_normal();
 	test_prod_ext();
-//    test_autovalores();
-        test_mt_times_m();
+    test_autovalores();
+    test_mt_times_m();
 	return 0;
 }

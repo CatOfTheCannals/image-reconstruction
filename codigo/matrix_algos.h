@@ -77,7 +77,7 @@ Matrix resolver_sistema_con_svd(const Matrix& v, const Matrix& sInv_ut, const Ma
 
 std::tuple<Matrix, Matrix, double, int> generar_svd(const Matrix& A);
 
-std::tuple<Matrix, Matrix, double> calcular_autovectores(Matrix B);
+std::tuple<Matrix, Matrix, int> calcular_autovectores(Matrix B);
 
 Matrix sqrt_to_all_elems(const Matrix& A);
 
