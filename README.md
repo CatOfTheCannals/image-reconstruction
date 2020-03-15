@@ -1,5 +1,5 @@
 ## image-reconstruction
-Simulating noise in computed tomography. Reconstructing images with singular value decomposition-least squares implementation.
+Simulating noise in computed tomography. Reconstructing images with singular value decomposition-least squares cpp implementation.
 
 ### Link to report:
 https://v1.overleaf.com/16910627dwvnptckcqdx#/64659537/
